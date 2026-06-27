@@ -1,0 +1,51 @@
+"""Abstract base class for LLM providers (Strategy pattern).
+
+Every concrete LLM provider must subclass :class:`LlmProvider` and
+implement :meth:`send_message`.  This makes it trivial to swap
+providers (e.g. from DeepSeek to OpenAI) without touching any
+application code that depends on the abstraction.
+"""
+
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+
+
+class LlmProvider(ABC):
+    """Strategy interface for an LLM backend.
+
+    Responsibilities:
+    * Accept a list of messages (in Chat Completions format).
+    * Return the model's response as plain text.
+    """
+
+    @abstractmethod
+    async def send_message(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        model: str | None = None,
+        temperature: float = 0.7,
+        max_tokens: int = 4096,
+    ) -> str:
+        """Send *messages* to the LLM and return the plain-text response.
+
+        Parameters
+        ----------
+        messages:
+            List of message dicts, e.g.
+            ``[{"role": "user", "content": "Hello"}]``.
+        model:
+            Optional model name override.  When ``None`` the provider
+            uses its configured default.
+        temperature:
+            Sampling temperature (0.0 – 2.0).
+        max_tokens:
+            Maximum tokens in the response.
+
+        Returns
+        -------
+        str
+            The content of the assistant's reply.
+        """
+        ...

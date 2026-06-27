@@ -4,6 +4,10 @@ version = "0.1.0"
 description = "A production-ready Python project for building and experimenting with AI agents."
 requires-python = ">=3.13"
 authors = []
+dependencies = [
+    "openai>=2.44.0",
+    "python-dotenv>=1.0.0",
+]
 
 [build-system]
 requires = ["hatchling"]
