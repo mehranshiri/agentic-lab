@@ -8,6 +8,7 @@ behind the Strategy boundary.
 from __future__ import annotations
 
 from llm.base import LlmProvider
+from llm.response import LLMResponse
 
 
 class LlmClient:
@@ -16,7 +17,7 @@ class LlmClient:
     Responsibilities:
     * Accept a plain-text *prompt*.
     * Delegate to the underlying :class:`LlmProvider`.
-    * Return the assistant's plain-text reply.
+    * Return a structured :class:`LLMResponse`.
     """
 
     def __init__(self, provider: LlmProvider) -> None:
@@ -30,8 +31,8 @@ class LlmClient:
         """
         self._provider = provider
 
-    async def generate(self, prompt: str) -> str:
-        """Send *prompt* to the LLM and return the reply as plain text.
+    async def generate(self, prompt: str) -> LLMResponse:
+        """Send *prompt* to the LLM and return a structured response.
 
         Parameters
         ----------
@@ -40,8 +41,9 @@ class LlmClient:
 
         Returns
         -------
-        str
-            The model's response content.
+        LLMResponse
+            Value object with ``.text``, ``.model``, ``.usage``,
+            ``.finish_reason``, and ``.raw``.
         """
         messages: list[dict[str, str]] = [{"role": "user", "content": prompt}]
         return await self._provider.send_message(messages)

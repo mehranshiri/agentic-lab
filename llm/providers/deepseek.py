@@ -11,6 +11,7 @@ from typing import Any
 from openai import AsyncOpenAI
 
 from llm.base import LlmProvider
+from llm.response import LLMResponse
 
 
 class DeepSeekProvider(LlmProvider):
@@ -39,7 +40,7 @@ class DeepSeekProvider(LlmProvider):
         model: str | None = None,
         temperature: float = 0.7,
         max_tokens: int = 4096,
-    ) -> str:
+    ) -> LLMResponse:
         chosen_model = model or self._default_model
 
         response = await self._client.chat.completions.create(
@@ -49,4 +50,17 @@ class DeepSeekProvider(LlmProvider):
             max_tokens=max_tokens,
         )
 
-        return response.choices[0].message.content or ""
+        choice = response.choices[0]
+        usage = response.usage
+
+        return LLMResponse(
+            text=choice.message.content or "",
+            model=response.model or chosen_model,
+            usage={
+                "prompt_tokens": usage.prompt_tokens if usage else 0,
+                "completion_tokens": usage.completion_tokens if usage else 0,
+                "total_tokens": usage.total_tokens if usage else 0,
+            },
+            finish_reason=choice.finish_reason or "",
+            raw=response,
+        )

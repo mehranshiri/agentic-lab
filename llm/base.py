@@ -10,13 +10,15 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
+from llm.response import LLMResponse
+
 
 class LlmProvider(ABC):
     """Strategy interface for an LLM backend.
 
     Responsibilities:
     * Accept a list of messages (in Chat Completions format).
-    * Return the model's response as plain text.
+    * Return a rich :class:`LLMResponse` value object.
     """
 
     @abstractmethod
@@ -27,8 +29,8 @@ class LlmProvider(ABC):
         model: str | None = None,
         temperature: float = 0.7,
         max_tokens: int = 4096,
-    ) -> str:
-        """Send *messages* to the LLM and return the plain-text response.
+    ) -> LLMResponse:
+        """Send *messages* to the LLM and return a structured response.
 
         Parameters
         ----------
@@ -45,7 +47,8 @@ class LlmProvider(ABC):
 
         Returns
         -------
-        str
-            The content of the assistant's reply.
+        LLMResponse
+            Structured response with ``.text``, ``.model``, ``.usage``,
+            ``.finish_reason``, and ``.raw``.
         """
         ...
