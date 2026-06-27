@@ -8,7 +8,6 @@ behind the Strategy boundary.
 from __future__ import annotations
 
 from llm.base import LlmProvider
-from llm.providers.deepseek import DeepSeekProvider
 
 
 class LlmClient:
@@ -20,19 +19,16 @@ class LlmClient:
     * Return the assistant's plain-text reply.
     """
 
-    def __init__(
-        self,
-        provider: LlmProvider | None = None,
-    ) -> None:
+    def __init__(self, provider: LlmProvider) -> None:
         """Initialise the client.
 
         Parameters
         ----------
         provider:
-            Any :class:`LlmProvider` implementation.  Defaults to
-            :class:`DeepSeekProvider` when ``None``.
+            Any :class:`LlmProvider` implementation (injected by the
+            composition root).
         """
-        self._provider = provider or DeepSeekProvider()
+        self._provider = provider
 
     async def generate(self, prompt: str) -> str:
         """Send *prompt* to the LLM and return the reply as plain text.

@@ -10,18 +10,26 @@ from typing import Any
 
 from openai import AsyncOpenAI
 
-from core.config import settings
 from llm.base import LlmProvider
 
 
 class DeepSeekProvider(LlmProvider):
-    """LLM provider that calls the DeepSeek Chat Completions API."""
+    """LLM provider that calls the DeepSeek Chat Completions API.
 
-    def __init__(self, model: str = "deepseek-chat") -> None:
+    Dependencies (*api_key*, *base_url*) are injected via the constructor
+    so that the provider does not reach for a global config singleton.
+    """
+
+    def __init__(
+        self,
+        api_key: str,
+        base_url: str,
+        model: str = "deepseek-chat",
+    ) -> None:
         self._default_model = model
         self._client: AsyncOpenAI = AsyncOpenAI(
-            api_key=settings.deepseek_api_key,
-            base_url=settings.deepseek_base_url,
+            api_key=api_key,
+            base_url=base_url,
         )
 
     async def send_message(
