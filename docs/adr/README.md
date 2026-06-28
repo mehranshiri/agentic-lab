@@ -11,6 +11,8 @@ decided, **why**, and what **trade-offs** were considered.
 | [001](001-sprint1-project-foundation.md) | 1 — Project Foundation | `uv`, `hatchling`, flat package layout, frozen `Settings` |
 | [002](002-sprint2-llm-infrastructure.md) | 2 — LLM Infrastructure | Strategy pattern for providers, `LlmClient` facade, frozen `LLMResponse` |
 | [003](003-sprint3-tool-framework.md) | 3 — Tool Framework | Instance-based `ToolRegistry`, Template Method lifecycle, frozen `ToolResult` |
+| [004](004-sprint4-tool-discovery.md) | 4 — Tool Discovery | Stateless `ToolCatalog` discovery layer, no caching, queries registry live |
+| [005](005-sprint5-provider-tool-representation.md) | 5 — Provider Tool Representation | `ToolSchemaAdapter` ABC, `DeepSeekToolSchemaAdapter`, DIP between tools and LLM |
 
 ## Format
 

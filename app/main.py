@@ -1,59 +1,53 @@
-"""Application entry-point — demonstrates the Tool Framework.
+"""Application entry-point — demonstrates the tool-schema adapter layer.
 
-Registers tools in the :class:`ToolRegistry` and invokes the
-``ReadFileTool`` to show the lifecycle (validate → execute → result)
-in action.
+Registers tools, discovers them through the :class:`~tools.catalog.ToolCatalog`,
+and translates their metadata into DeepSeek-compatible tool definitions using
+the provider-specific schema adapter.
 """
 
 from __future__ import annotations
 
-import asyncio
-from pathlib import Path
+import json
 
-from tools import ReadFileTool, ToolRegistry
+from llm import DeepSeekToolSchemaAdapter
+from tools import ReadFileTool, ToolCatalog, ToolRegistry
 
 
-async def main() -> None:
+def main() -> None:
     # ------------------------------------------------------------------
     # 1. Build the registry and register tools
     # ------------------------------------------------------------------
     registry = ToolRegistry()
     registry.register(ReadFileTool())
 
-    print("Registered tools:", registry.list_names())
+    # ------------------------------------------------------------------
+    # 2. Create the catalog (discovery layer — never executes tools)
+    # ------------------------------------------------------------------
+    catalog = ToolCatalog(registry)
 
     # ------------------------------------------------------------------
-    # 2. Look up ReadFileTool by name
+    # 3. List available tool metadata through the catalog
     # ------------------------------------------------------------------
-    tool = registry.get("read_file")
-    if tool is None:
-        print("Tool 'read_file' not found in registry!")
-        return
+    tool_metadata_list = catalog.list_tools()
+
+    print(f"Available tools ({len(tool_metadata_list)}):\n")
+    for tool in tool_metadata_list:
+        print(f"  • {tool.name}")
+        print(f"    {tool.description}\n")
 
     # ------------------------------------------------------------------
-    # 3. Invoke the tool against a known file (pyproject.toml)
+    # 4. Translate to DeepSeek-compatible tool definitions
     # ------------------------------------------------------------------
-    target = Path(__file__).parent.parent / "pyproject.toml"
-    result = await tool.run(path=str(target))
+    adapter = DeepSeekToolSchemaAdapter()
 
-    if result.success:
-        print(f"\n--- Contents of {target.name} ---")
-        print(result.content)
-    else:
-        print(f"Tool failed: {result.error}")
+    print("─" * 60)
+    print("DeepSeek-compatible tool definitions:\n")
 
-    # ------------------------------------------------------------------
-    # 4. Demonstrate error handling — non-existent file
-    # ------------------------------------------------------------------
-    missing = await tool.run(path="/tmp/does_not_exist.txt")
-    print(f"\nMissing file → success={missing.success}, error={missing.error}")
-
-    # ------------------------------------------------------------------
-    # 5. Demonstrate error handling — missing required parameter
-    # ------------------------------------------------------------------
-    bad_call = await tool.run()
-    print(f"No path → success={bad_call.success}, error={bad_call.error}")
+    for metadata in tool_metadata_list:
+        provider_def = adapter.to_provider_format(metadata)
+        print(json.dumps(provider_def, indent=2))
+        print()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
