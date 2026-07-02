@@ -9,6 +9,7 @@ application code that depends on the abstraction.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import Any
 
 from llm.response import LLMResponse
 
@@ -29,6 +30,7 @@ class LlmProvider(ABC):
         model: str | None = None,
         temperature: float = 0.7,
         max_tokens: int = 4096,
+        tools: list[dict[str, Any]] | None = None,
     ) -> LLMResponse:
         """Send *messages* to the LLM and return a structured response.
 
@@ -44,11 +46,16 @@ class LlmProvider(ABC):
             Sampling temperature (0.0 – 2.0).
         max_tokens:
             Maximum tokens in the response.
+        tools:
+            Optional list of provider-formatted tool definitions (e.g.
+            DeepSeek-compatible ``{"type": "function", "function": {...}}``
+            dicts).  When provided, the LLM may return tool-call requests
+            rather than plain text.
 
         Returns
         -------
         LLMResponse
             Structured response with ``.text``, ``.model``, ``.usage``,
-            ``.finish_reason``, and ``.raw``.
+            ``.finish_reason``, ``.raw``, and optionally ``.tool_calls``.
         """
         ...
