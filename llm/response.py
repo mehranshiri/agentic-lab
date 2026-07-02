@@ -8,7 +8,10 @@ callers to any provider-specific response format.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from llm.provider_tool_call import ProviderToolCall
 
 
 @dataclass(frozen=True)
@@ -29,3 +32,6 @@ class LLMResponse:
 
     #: The raw provider response, useful for debugging / evaluation.
     raw: Any = None
+
+    #: Provider-independent tool calls extracted from the response (if any).
+    tool_calls: list[ProviderToolCall] | None = None

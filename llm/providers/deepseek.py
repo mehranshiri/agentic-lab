@@ -6,11 +6,13 @@ the DeepSeek API endpoint.
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from openai import AsyncOpenAI
 
 from llm.base import LlmProvider
+from llm.provider_tool_call import ProviderToolCall
 from llm.response import LLMResponse
 
 
@@ -40,18 +42,43 @@ class DeepSeekProvider(LlmProvider):
         model: str | None = None,
         temperature: float = 0.7,
         max_tokens: int = 4096,
+        tools: list[dict[str, Any]] | None = None,
     ) -> LLMResponse:
         chosen_model = model or self._default_model
 
-        response = await self._client.chat.completions.create(
-            model=chosen_model,
-            messages=messages,  # type: ignore[arg-type]
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
+        kwargs: dict[str, Any] = {
+            "model": chosen_model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+        if tools:
+            kwargs["tools"] = tools
+
+        response = await self._client.chat.completions.create(**kwargs)  # type: ignore[arg-type]
 
         choice = response.choices[0]
         usage = response.usage
+
+        # ------------------------------------------------------------------
+        # Extract tool calls from the provider response (if any)
+        # ------------------------------------------------------------------
+        tool_calls: list[ProviderToolCall] | None = None
+        raw_tool_calls = getattr(choice.message, "tool_calls", None)
+        if raw_tool_calls:
+            tool_calls = []
+            for tc in raw_tool_calls:
+                try:
+                    arguments = json.loads(tc.function.arguments)
+                except (json.JSONDecodeError, AttributeError):
+                    arguments = {}
+                tool_calls.append(
+                    ProviderToolCall(
+                        id=tc.id,
+                        name=tc.function.name,
+                        arguments=arguments,
+                    )
+                )
 
         return LLMResponse(
             text=choice.message.content or "",
@@ -63,4 +90,5 @@ class DeepSeekProvider(LlmProvider):
             },
             finish_reason=choice.finish_reason or "",
             raw=response,
+            tool_calls=tool_calls,
         )
