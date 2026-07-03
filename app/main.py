@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 import json
 
-from core.config import settings
+from core.config import settings, PROJECT_ROOT
 from llm import (
     DeepSeekProvider,
     DeepSeekToolSchemaAdapter,
@@ -18,6 +18,7 @@ from llm import (
     ToolCallResult,
 )
 from tools import (
+    ExecutionContext,
     ReadFileTool,
     ToolCatalog,
     ToolInvoker,
@@ -65,9 +66,14 @@ async def main() -> None:
         base_url=settings.deepseek_base_url,
     )
 
+    # prompt = (
+    #     "Read the file 'README.md' using the available tool, "
+    #     "then tell me what this project is about in one sentence."
+    # )
+
     prompt = (
-        "Read the file 'README.md' using the available tool, "
-        "then tell me what this project is about in one sentence."
+        "Read the app/main.py file using available tool, "
+        "then tell me what is the order of execution in one sentence."
     )
 
     print("─" * 60)
@@ -97,7 +103,8 @@ async def main() -> None:
         print("\n" + "─" * 60)
         print("Processing tool calls through ToolCallBridge:\n")
 
-        invoker = ToolInvoker(registry)
+        context = ExecutionContext(workspace_root=PROJECT_ROOT)
+        invoker = ToolInvoker(registry, context=context)
         bridge = ToolCallBridge(invoker)
 
         results: list[ToolCallResult] = await bridge.process(
@@ -115,31 +122,6 @@ async def main() -> None:
             else:
                 print(f"      error:   {tcr.result.error}")
             print()
-
-    # ------------------------------------------------------------------
-    # 6. Unknown tool — demonstrate graceful failure
-    # ------------------------------------------------------------------
-    print("─" * 60)
-    print("Simulated tool call for an unknown tool:\n")
-
-    invoker = ToolInvoker(registry)
-    bridge = ToolCallBridge(invoker)
-
-    unknown_results = await bridge.process(
-        [
-            ProviderToolCall(
-                id="call_fake_1",
-                name="delete_everything",
-                arguments={},
-            )
-        ]
-    )
-
-    for tcr in unknown_results:
-        print(f"  tool:     {tcr.invocation.tool_name}")
-        print(f"  success:  {tcr.result.success}")
-        print(f"  error:    {tcr.result.error}")
-        print()
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@
 
 from tools.base import Tool
 from tools.catalog import ToolCatalog
+from tools.execution_context import ExecutionContext
 from tools.filesystem import ReadFileTool
 from tools.invocation import ToolInvocation
 from tools.invoker import ToolInvoker
@@ -10,6 +11,7 @@ from tools.registry import ToolRegistry
 from tools.result import ToolResult
 
 __all__ = [
+    "ExecutionContext",
     "ReadFileTool",
     "Tool",
     "ToolCatalog",

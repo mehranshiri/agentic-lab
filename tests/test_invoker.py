@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from tools.base import Tool
+from tools.execution_context import ExecutionContext
 from tools.invocation import ToolInvocation
 from tools.invoker import ToolInvoker
 from tools.metadata import ToolMetadata
@@ -38,6 +41,20 @@ class _FailingTool(Tool):
         raise RuntimeError("deliberate failure")
 
 
+class _ContextConsumerTool(Tool):
+    """A toy tool that records whether it received a context."""
+
+    @property
+    def metadata(self) -> ToolMetadata:
+        return ToolMetadata(name="ctx_consumer", description="Records context.")
+
+    async def execute(self, **kwargs: object) -> ToolResult:
+        ctx = kwargs.get("_context")
+        if ctx is not None and isinstance(ctx, ExecutionContext):
+            return ToolResult.ok(f"context received: workspace={ctx.workspace_root}")
+        return ToolResult.ok("no context")
+
+
 @pytest.fixture
 def registry() -> ToolRegistry:
     """A registry pre-populated with two test tools."""
@@ -48,8 +65,23 @@ def registry() -> ToolRegistry:
 
 
 @pytest.fixture
+def workspace_root(tmp_path: Path) -> Path:
+    return tmp_path.resolve()
+
+
+@pytest.fixture
+def context(workspace_root: Path) -> ExecutionContext:
+    return ExecutionContext(workspace_root=workspace_root)
+
+
+@pytest.fixture
 def invoker(registry: ToolRegistry) -> ToolInvoker:
     return ToolInvoker(registry)
+
+
+@pytest.fixture
+def invoker_with_context(registry: ToolRegistry, context: ExecutionContext) -> ToolInvoker:
+    return ToolInvoker(registry, context=context)
 
 
 # ---------------------------------------------------------------------------
@@ -163,3 +195,59 @@ class TestToolInvoker:
         first = await invoker.invoke(invocation)
         second = await invoker.invoke(invocation)
         assert first == second
+
+
+# ---------------------------------------------------------------------------
+# ExecutionContext integration
+# ---------------------------------------------------------------------------
+
+
+class TestExecutionContext:
+    """Tests for the :class:`ExecutionContext` value object."""
+
+    def test_is_frozen(self, workspace_root: Path) -> None:
+        """``ExecutionContext`` must be immutable."""
+        ctx = ExecutionContext(workspace_root=workspace_root)
+        with pytest.raises(Exception):
+            ctx.workspace_root = Path("/tmp")  # type: ignore[misc]
+
+    def test_rejects_relative_path(self) -> None:
+        """``workspace_root`` must be absolute."""
+        with pytest.raises(ValueError, match="must be absolute"):
+            ExecutionContext(workspace_root=Path("relative/path"))
+
+
+class TestToolInvokerWithContext:
+    """Tests that the invoker supplies ``ExecutionContext`` to tools."""
+
+    @pytest.mark.asyncio
+    async def test_context_passed_to_tool(self, registry: ToolRegistry, context: ExecutionContext) -> None:
+        """When a context is provided, it must reach the tool."""
+        registry.register(_ContextConsumerTool())
+        invoker = ToolInvoker(registry, context=context)
+        invocation = ToolInvocation(tool_name="ctx_consumer", arguments={})
+        result = await invoker.invoke(invocation)
+        assert result.success
+        assert str(context.workspace_root) in result.content
+
+    @pytest.mark.asyncio
+    async def test_no_context_when_none(self, registry: ToolRegistry) -> None:
+        """When no context is provided, tools get ``_context=None``."""
+        registry.register(_ContextConsumerTool())
+        invoker = ToolInvoker(registry)
+        invocation = ToolInvocation(tool_name="ctx_consumer", arguments={})
+        result = await invoker.invoke(invocation)
+        assert result.success
+        assert result.content == "no context"
+
+    @pytest.mark.asyncio
+    async def test_invoker_context_takes_precedence(self, registry: ToolRegistry, context: ExecutionContext) -> None:
+        """The ``_context`` injected by the invoker replaces any user-supplied ``_context``."""
+        registry.register(_ContextConsumerTool())
+        invoker = ToolInvoker(registry, context=context)
+        invocation = ToolInvocation(tool_name="ctx_consumer", arguments={"_context": "explicit"})
+        result = await invoker.invoke(invocation)
+        assert result.success
+        # The invoker's real ExecutionContext must be what reaches the tool,
+        # not the user-supplied string.
+        assert str(context.workspace_root) in result.content

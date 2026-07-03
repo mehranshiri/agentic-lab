@@ -31,10 +31,6 @@ class DeepSeekToolSchemaAdapter(ToolSchemaAdapter):
             }
         }
 
-    Since :class:`ToolMetadata` currently carries only ``name`` and
-    ``description`` (input schemas belong to a future sprint), the
-    ``parameters`` block is emitted as an empty object schema so that
-    the definition is always structurally valid for the provider.
     """
 
     def to_provider_format(self, metadata: ToolMetadata) -> dict[str, Any]:
@@ -55,10 +51,6 @@ class DeepSeekToolSchemaAdapter(ToolSchemaAdapter):
             "function": {
                 "name": metadata.name,
                 "description": metadata.description,
-                "parameters": {
-                    "type": "object",
-                    "properties": {},
-                    "required": [],
-                },
+                "parameters": metadata.parameters,
             },
         }
