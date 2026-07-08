@@ -15,6 +15,7 @@ decided, **why**, and what **trade-offs** were considered.
 | [005](005-sprint5-provider-tool-representation.md) | 5 — Provider Tool Representation | `ToolSchemaAdapter` ABC, `DeepSeekToolSchemaAdapter`, DIP between tools and LLM |
 | [006](006-sprint6-tool-invocation.md) | 6 — Tool Invocation | `ToolInvocation` frozen request, `ToolInvoker` stateless execution boundary |
 | [007](007-sprint7-tool-call-bridge.md) | 7 — Tool Call Bridge | `ProviderToolCall` value object, `ToolCallBridge` translation boundary, `ToolCallResult` pairing |
+| [008](008-sprint8-conversation-agent-runtime.md) | 8 — Conversation & Agent Runtime | `Conversation` immutable domain, `ConversationRepresentation` strategy, `AgentRuntime` reasoning loop, `AgentResult` |
 
 ## Format
 
