@@ -3,7 +3,7 @@
 from tools.base import Tool
 from tools.catalog import ToolCatalog
 from tools.execution_context import ExecutionContext
-from tools.filesystem import ReadFileTool
+from tools.filesystem import ReadFileTool, WriteFileTool
 from tools.invocation import ToolInvocation
 from tools.invoker import ToolInvoker
 from tools.metadata import ToolMetadata
@@ -20,4 +20,5 @@ __all__ = [
     "ToolMetadata",
     "ToolRegistry",
     "ToolResult",
+    "WriteFileTool",
 ]
