@@ -17,6 +17,7 @@ This project follows **SOLID** principles and clean architecture:
 - **Template Method**: Every tool follows a `validate → execute` lifecycle (see `tools/base.py`).
 - **ADR required**: Any architectural decision that changes module boundaries, introduces a new pattern, or adds a dependency must be documented in `docs/adr/`. Reference the ADR in commit messages.
 - **Simplicity over cleverness**: Prefer the simplest abstraction that solves the immediate need. Don't add extensibility points until they have a second consumer.
+- **Domain-first**: Prefer discovering missing domain concepts over introducing technical layers. New abstractions should emerge because they represent real responsibilities in the domain, not because they make the architecture appear more flexible.
 
 ## Conventions
 
