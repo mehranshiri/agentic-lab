@@ -8,7 +8,6 @@ tool execution, and the reasoning loop behind a single :meth:`run` method.
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from agent.result import AgentResult
 from conversation.models import Conversation, ToolCall
@@ -105,10 +104,8 @@ class AgentRuntime:
             logger.debug("Reasoning iteration %d", iteration)
 
             # 3a. Convert Conversation to provider messages
-            provider_messages = (
-                self._conversation_representation.to_provider_messages(
-                    conversation
-                )
+            provider_messages = self._conversation_representation.to_provider_messages(
+                conversation
             )
 
             # 3b. Send to LLM
@@ -125,9 +122,7 @@ class AgentRuntime:
                 )
 
             # 3d. Tool calls received — record assistant message
-            domain_tool_calls = self._to_domain_tool_calls(
-                response.tool_calls
-            )
+            domain_tool_calls = self._to_domain_tool_calls(response.tool_calls)
             conversation = conversation.add_assistant_message(
                 content=response.text or None,
                 tool_calls=domain_tool_calls,

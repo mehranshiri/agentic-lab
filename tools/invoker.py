@@ -64,9 +64,7 @@ class ToolInvoker:
         """
         tool = self._registry.get(invocation.tool_name)
         if tool is None:
-            return ToolResult.fail(
-                f"Unknown tool: '{invocation.tool_name}'"
-            )
+            return ToolResult.fail(f"Unknown tool: '{invocation.tool_name}'")
         kwargs = dict(invocation.arguments)
         if self._context is not None:
             kwargs["_context"] = self._context

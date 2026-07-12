@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from conversation.models import Conversation, Message, MessageRole, ToolCall
+from conversation.models import Conversation, ToolCall
 from llm.conversation_representation import (
     ConversationRepresentation,
     DeepSeekConversationRepresentation,
@@ -18,9 +18,7 @@ class TestDeepSeekConversationRepresentation:
         self.representation = DeepSeekConversationRepresentation()
 
     def test_is_conversation_representation(self) -> None:
-        assert isinstance(
-            self.representation, ConversationRepresentation
-        )
+        assert isinstance(self.representation, ConversationRepresentation)
 
     def test_empty_conversation(self) -> None:
         conv = Conversation()
@@ -58,9 +56,7 @@ class TestDeepSeekConversationRepresentation:
 
     def test_assistant_message_with_content_and_tool_calls(self) -> None:
         tcs = [ToolCall(id="c1", name="echo", arguments={"k": "v"})]
-        conv = Conversation().add_assistant_message(
-            content="thinking…", tool_calls=tcs
-        )
+        conv = Conversation().add_assistant_message(content="thinking…", tool_calls=tcs)
         result = self.representation.to_provider_messages(conv)
 
         assert result[0]["role"] == "assistant"

@@ -29,6 +29,7 @@ load_dotenv(dotenv_path=PROJECT_ROOT / ".env")
 # Required-setting validation helper
 # ---------------------------------------------------------------------------
 
+
 class ConfigurationError(Exception):
     """Raised when a required configuration setting is missing or invalid."""
 
@@ -49,13 +50,16 @@ def _require(name: str) -> str:
 # Settings dataclass
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class Settings:
     """Immutable application settings populated from the environment."""
 
     # ── DeepSeek / LLM ────────────────────────────────────────────────
     deepseek_api_key: str = field(default_factory=lambda: _require("DEEPSEEK_API_KEY"))
-    deepseek_base_url: str = field(default_factory=lambda: _require("DEEPSEEK_BASE_URL"))
+    deepseek_base_url: str = field(
+        default_factory=lambda: _require("DEEPSEEK_BASE_URL")
+    )
 
     # ── Future settings can be added here ─────────────────────────────
     # e.g. log_level: str = field(default_factory=lambda: os.getenv("LOG_LEVEL", "INFO"))

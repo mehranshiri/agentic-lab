@@ -26,9 +26,7 @@ class ConversationRepresentation(ABC):
     """
 
     @abstractmethod
-    def to_provider_messages(
-        self, conversation: Conversation
-    ) -> list[dict[str, Any]]:
+    def to_provider_messages(self, conversation: Conversation) -> list[dict[str, Any]]:
         """Convert *conversation* into provider-compatible message dicts.
 
         Parameters
@@ -58,9 +56,7 @@ class DeepSeekConversationRepresentation(ConversationRepresentation):
       ``{"role": "tool", "content": "...", "tool_call_id": "..."}``
     """
 
-    def to_provider_messages(
-        self, conversation: Conversation
-    ) -> list[dict[str, Any]]:
+    def to_provider_messages(self, conversation: Conversation) -> list[dict[str, Any]]:
         """Convert *conversation* into DeepSeek-compatible message dicts.
 
         Parameters

@@ -19,6 +19,7 @@ from tools.result import ToolResult
 # Test helpers
 # ---------------------------------------------------------------------------
 
+
 class _EchoTool(Tool):
     """A toy tool that echoes back its arguments for testing."""
 
@@ -80,13 +81,16 @@ def invoker(registry: ToolRegistry) -> ToolInvoker:
 
 
 @pytest.fixture
-def invoker_with_context(registry: ToolRegistry, context: ExecutionContext) -> ToolInvoker:
+def invoker_with_context(
+    registry: ToolRegistry, context: ExecutionContext
+) -> ToolInvoker:
     return ToolInvoker(registry, context=context)
 
 
 # ---------------------------------------------------------------------------
 # ToolInvocation
 # ---------------------------------------------------------------------------
+
 
 class TestToolInvocation:
     """Tests for the :class:`ToolInvocation` value object."""
@@ -125,17 +129,14 @@ class TestToolInvocation:
 # ToolInvoker
 # ---------------------------------------------------------------------------
 
+
 class TestToolInvoker:
     """Tests for the :class:`ToolInvoker`."""
 
     @pytest.mark.asyncio
-    async def test_invoke_known_tool_succeeds(
-        self, invoker: ToolInvoker
-    ) -> None:
+    async def test_invoke_known_tool_succeeds(self, invoker: ToolInvoker) -> None:
         """Invoking a registered tool must return a successful result."""
-        invocation = ToolInvocation(
-            tool_name="echo", arguments={"hello": "world"}
-        )
+        invocation = ToolInvocation(tool_name="echo", arguments={"hello": "world"})
         result = await invoker.invoke(invocation)
         assert result.success
 
@@ -144,9 +145,7 @@ class TestToolInvoker:
         self, invoker: ToolInvoker
     ) -> None:
         """Arguments from the invocation must reach the tool."""
-        invocation = ToolInvocation(
-            tool_name="echo", arguments={"key": "value"}
-        )
+        invocation = ToolInvocation(tool_name="echo", arguments={"key": "value"})
         result = await invoker.invoke(invocation)
         assert "key" in result.content
 
@@ -155,9 +154,7 @@ class TestToolInvoker:
         self, invoker: ToolInvoker
     ) -> None:
         """Invoking an unregistered tool must return a failure result."""
-        invocation = ToolInvocation(
-            tool_name="ghost_tool", arguments={}
-        )
+        invocation = ToolInvocation(tool_name="ghost_tool", arguments={})
         result = await invoker.invoke(invocation)
         assert not result.success
         assert "Unknown tool" in (result.error or "")
@@ -167,9 +164,7 @@ class TestToolInvoker:
         self, invoker: ToolInvoker
     ) -> None:
         """When a tool raises, the invoker must still return a ``ToolResult``."""
-        invocation = ToolInvocation(
-            tool_name="failing", arguments={}
-        )
+        invocation = ToolInvocation(tool_name="failing", arguments={})
         result = await invoker.invoke(invocation)
         assert not result.success
         assert "deliberate failure" in (result.error or "")
@@ -185,13 +180,9 @@ class TestToolInvoker:
             assert isinstance(result, ToolResult)
 
     @pytest.mark.asyncio
-    async def test_invoker_is_stateless(
-        self, invoker: ToolInvoker
-    ) -> None:
+    async def test_invoker_is_stateless(self, invoker: ToolInvoker) -> None:
         """Repeated invocations must produce consistent results."""
-        invocation = ToolInvocation(
-            tool_name="echo", arguments={"count": 1}
-        )
+        invocation = ToolInvocation(tool_name="echo", arguments={"count": 1})
         first = await invoker.invoke(invocation)
         second = await invoker.invoke(invocation)
         assert first == second
@@ -221,7 +212,9 @@ class TestToolInvokerWithContext:
     """Tests that the invoker supplies ``ExecutionContext`` to tools."""
 
     @pytest.mark.asyncio
-    async def test_context_passed_to_tool(self, registry: ToolRegistry, context: ExecutionContext) -> None:
+    async def test_context_passed_to_tool(
+        self, registry: ToolRegistry, context: ExecutionContext
+    ) -> None:
         """When a context is provided, it must reach the tool."""
         registry.register(_ContextConsumerTool())
         invoker = ToolInvoker(registry, context=context)
@@ -241,11 +234,15 @@ class TestToolInvokerWithContext:
         assert result.content == "no context"
 
     @pytest.mark.asyncio
-    async def test_invoker_context_takes_precedence(self, registry: ToolRegistry, context: ExecutionContext) -> None:
+    async def test_invoker_context_takes_precedence(
+        self, registry: ToolRegistry, context: ExecutionContext
+    ) -> None:
         """The ``_context`` injected by the invoker replaces any user-supplied ``_context``."""
         registry.register(_ContextConsumerTool())
         invoker = ToolInvoker(registry, context=context)
-        invocation = ToolInvocation(tool_name="ctx_consumer", arguments={"_context": "explicit"})
+        invocation = ToolInvocation(
+            tool_name="ctx_consumer", arguments={"_context": "explicit"}
+        )
         result = await invoker.invoke(invocation)
         assert result.success
         # The invoker's real ExecutionContext must be what reaches the tool,

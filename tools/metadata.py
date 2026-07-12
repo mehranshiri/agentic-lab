@@ -31,8 +31,10 @@ class ToolMetadata:
 
     name: str
     description: str
-    parameters: dict[str, Any] = field(default_factory=lambda: {
-        "type": "object",
-        "properties": {},
-        "required": [],
-    })
+    parameters: dict[str, Any] = field(
+        default_factory=lambda: {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        }
+    )

@@ -27,9 +27,7 @@ from tools.registry import ToolRegistry
 class FakeConversationRepresentation(ConversationRepresentation):
     """Stub that converts a Conversation into simple role/content dicts."""
 
-    def to_provider_messages(
-        self, conversation: Any
-    ) -> list[dict[str, Any]]:
+    def to_provider_messages(self, conversation: Any) -> list[dict[str, Any]]:
         result: list[dict[str, Any]] = []
         for msg in conversation.messages:
             item: dict[str, Any] = {
@@ -315,9 +313,7 @@ class TestAgentRuntime:
 
         mock_bridge.process.return_value = [
             ToolCallResult(
-                invocation=ToolInvocation(
-                    tool_name="echo", arguments={}
-                ),
+                invocation=ToolInvocation(tool_name="echo", arguments={}),
                 result=ToolResult.ok("echo output"),
             )
         ]
@@ -326,9 +322,9 @@ class TestAgentRuntime:
 
         assert result.success is True
         # Verify the second call includes the full conversation
-        second_call_messages = mock_provider.send_message.call_args_list[1][
-            1
-        ]["messages"]
+        second_call_messages = mock_provider.send_message.call_args_list[1][1][
+            "messages"
+        ]
         assert len(second_call_messages) == 3
         assert second_call_messages[0]["role"] == "user"
         assert second_call_messages[1]["role"] == "assistant"
@@ -373,9 +369,7 @@ class TestAgentRuntime:
 
         mock_bridge.process.return_value = [
             ToolCallResult(
-                invocation=ToolInvocation(
-                    tool_name="bad_tool", arguments={}
-                ),
+                invocation=ToolInvocation(tool_name="bad_tool", arguments={}),
                 result=ToolResult.fail("tool crashed"),
             )
         ]
@@ -383,9 +377,9 @@ class TestAgentRuntime:
         result = await runtime.run("test")
 
         assert result.success is True
-        second_call_messages = mock_provider.send_message.call_args_list[1][
-            1
-        ]["messages"]
+        second_call_messages = mock_provider.send_message.call_args_list[1][1][
+            "messages"
+        ]
         assert second_call_messages[2]["role"] == "tool"
         assert "Error: tool crashed" in second_call_messages[2]["content"]
 

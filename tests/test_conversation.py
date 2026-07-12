@@ -85,9 +85,7 @@ class TestMessage:
 
     def test_assistant_message_with_tool_calls(self) -> None:
         tcs = [ToolCall(id="c1", name="echo", arguments={})]
-        msg = Message(
-            role=MessageRole.ASSISTANT, content=None, tool_calls=tcs
-        )
+        msg = Message(role=MessageRole.ASSISTANT, content=None, tool_calls=tcs)
         assert msg.content is None
         assert msg.tool_calls == tcs
 
@@ -162,9 +160,7 @@ class TestConversation:
 
     def test_add_tool_message_returns_new_instance(self) -> None:
         conv = Conversation()
-        conv2 = conv.add_tool_message(
-            tool_call_id="call_1", content="result"
-        )
+        conv2 = conv.add_tool_message(tool_call_id="call_1", content="result")
         assert conv is not conv2
         assert conv2.messages[0].role == MessageRole.TOOL
         assert conv2.messages[0].tool_call_id == "call_1"

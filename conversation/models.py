@@ -72,9 +72,7 @@ class Message:
     def __post_init__(self) -> None:
         """Validate message consistency."""
         if self.role == MessageRole.TOOL and self.tool_call_id is None:
-            raise ValueError(
-                "Tool messages must have a 'tool_call_id'."
-            )
+            raise ValueError("Tool messages must have a 'tool_call_id'.")
 
 
 @dataclass(frozen=True)
@@ -136,9 +134,7 @@ class Conversation:
         )
         return Conversation(messages=[*self.messages, message])
 
-    def add_tool_message(
-        self, tool_call_id: str, content: str
-    ) -> Conversation:
+    def add_tool_message(self, tool_call_id: str, content: str) -> Conversation:
         """Return a new Conversation with an appended tool result message.
 
         Parameters

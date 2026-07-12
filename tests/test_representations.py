@@ -13,6 +13,7 @@ from tools.metadata import ToolMetadata
 # Test data
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def read_file_metadata() -> ToolMetadata:
     """Metadata matching the real ``ReadFileTool``."""
@@ -31,6 +32,7 @@ def dummy_metadata() -> ToolMetadata:
 # ---------------------------------------------------------------------------
 # DeepSeekToolSchemaAdapter
 # ---------------------------------------------------------------------------
+
 
 class TestDeepSeekToolSchemaAdapter:
     """Tests for :class:`DeepSeekToolSchemaAdapter`."""
@@ -51,27 +53,21 @@ class TestDeepSeekToolSchemaAdapter:
 
     def test_type_is_function(self, read_file_metadata: ToolMetadata) -> None:
         """The 'type' field must always be 'function'."""
-        result = DeepSeekToolSchemaAdapter().to_provider_format(
-            read_file_metadata
-        )
+        result = DeepSeekToolSchemaAdapter().to_provider_format(read_file_metadata)
         assert result["type"] == "function"
 
     def test_function_block_contains_name(
         self, read_file_metadata: ToolMetadata
     ) -> None:
         """The function block must include the tool name."""
-        result = DeepSeekToolSchemaAdapter().to_provider_format(
-            read_file_metadata
-        )
+        result = DeepSeekToolSchemaAdapter().to_provider_format(read_file_metadata)
         assert result["function"]["name"] == "read_file"
 
     def test_function_block_contains_description(
         self, read_file_metadata: ToolMetadata
     ) -> None:
         """The function block must include the tool description."""
-        result = DeepSeekToolSchemaAdapter().to_provider_format(
-            read_file_metadata
-        )
+        result = DeepSeekToolSchemaAdapter().to_provider_format(read_file_metadata)
         assert result["function"]["description"] == (
             "Read the contents of a text file. Does not modify the file."
         )
@@ -80,9 +76,7 @@ class TestDeepSeekToolSchemaAdapter:
         self, read_file_metadata: ToolMetadata
     ) -> None:
         """The parameters block must have type, properties, and required keys."""
-        result = DeepSeekToolSchemaAdapter().to_provider_format(
-            read_file_metadata
-        )
+        result = DeepSeekToolSchemaAdapter().to_provider_format(read_file_metadata)
         params = result["function"]["parameters"]
         assert params["type"] == "object"
         assert isinstance(params["properties"], dict)
@@ -92,18 +86,14 @@ class TestDeepSeekToolSchemaAdapter:
         self, dummy_metadata: ToolMetadata
     ) -> None:
         """The tool name in the output must match the input metadata."""
-        result = DeepSeekToolSchemaAdapter().to_provider_format(
-            dummy_metadata
-        )
+        result = DeepSeekToolSchemaAdapter().to_provider_format(dummy_metadata)
         assert result["function"]["name"] == "dummy_tool"
 
     def test_preserves_tool_description_from_metadata(
         self, dummy_metadata: ToolMetadata
     ) -> None:
         """The tool description in the output must match the input metadata."""
-        result = DeepSeekToolSchemaAdapter().to_provider_format(
-            dummy_metadata
-        )
+        result = DeepSeekToolSchemaAdapter().to_provider_format(dummy_metadata)
         assert result["function"]["description"] == "A tool for testing."
 
     def test_is_stateless(self, read_file_metadata: ToolMetadata) -> None:
@@ -117,6 +107,7 @@ class TestDeepSeekToolSchemaAdapter:
 # ---------------------------------------------------------------------------
 # ToolSchemaAdapter abstract base
 # ---------------------------------------------------------------------------
+
 
 class TestToolSchemaAdapterABC:
     """Tests for the ``ToolSchemaAdapter`` abstract base class."""

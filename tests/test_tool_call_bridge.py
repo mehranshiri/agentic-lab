@@ -196,9 +196,7 @@ class TestToolCallBridge:
         assert first[0] == second[0]
 
     @pytest.mark.asyncio
-    async def test_tool_call_with_empty_arguments(
-        self, bridge: ToolCallBridge
-    ) -> None:
+    async def test_tool_call_with_empty_arguments(self, bridge: ToolCallBridge) -> None:
         """A tool call with empty arguments dict should work."""
         tool_calls = [
             ProviderToolCall(id="call_1", name="echo", arguments={}),
@@ -210,9 +208,7 @@ class TestToolCallBridge:
         assert results[0].result.success
 
     @pytest.mark.asyncio
-    async def test_mixed_success_and_failure(
-        self, bridge: ToolCallBridge
-    ) -> None:
+    async def test_mixed_success_and_failure(self, bridge: ToolCallBridge) -> None:
         """A mix of successful and failing tool calls should all be recorded."""
         tool_calls = [
             ProviderToolCall(id="call_1", name="echo", arguments={"ok": True}),

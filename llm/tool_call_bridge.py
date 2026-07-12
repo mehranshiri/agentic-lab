@@ -58,9 +58,7 @@ class ToolCallBridge:
         """
         self._invoker = invoker
 
-    async def process(
-        self, tool_calls: list[ProviderToolCall]
-    ) -> list[ToolCallResult]:
+    async def process(self, tool_calls: list[ProviderToolCall]) -> list[ToolCallResult]:
         """Translate and execute each provider tool call sequentially.
 
         Parameters
@@ -81,8 +79,6 @@ class ToolCallBridge:
                 arguments=tc.arguments,
             )
             tool_result = await self._invoker.invoke(invocation)
-            results.append(
-                ToolCallResult(invocation=invocation, result=tool_result)
-            )
+            results.append(ToolCallResult(invocation=invocation, result=tool_result))
 
         return results
