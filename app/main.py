@@ -18,10 +18,13 @@ from llm import (
 )
 from tools import (
     ExecutionContext,
+    GrepTool,
     ReadFileTool,
+    ShellTool,
     ToolCatalog,
     ToolInvoker,
     ToolRegistry,
+    WriteFileTool,
 )
 
 
@@ -29,6 +32,9 @@ async def main() -> None:
     # ── 1. Tool infrastructure ──────────────────────────────────────────
     registry = ToolRegistry()
     registry.register(ReadFileTool())
+    registry.register(WriteFileTool())
+    registry.register(ShellTool())
+    registry.register(GrepTool())
 
     catalog = ToolCatalog(registry)
     context = ExecutionContext(workspace_root=PROJECT_ROOT)
@@ -55,9 +61,7 @@ async def main() -> None:
     )
 
     # ── 5. Execute ──────────────────────────────────────────────────────
-    prompt = (
-        "Read the README.md file and choose a Title for this app we are building."
-    )
+    prompt = "Read the README.md file and choose a Title for this app we are building."
     print(f"Prompt: {prompt}\n")
     print("Agent is working …\n")
 

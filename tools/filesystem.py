@@ -15,23 +15,48 @@ from tools.result import ToolResult
 
 
 # ---------------------------------------------------------------------------
+# Workspace boundary enforcement
+# ---------------------------------------------------------------------------
+
+
+class WorkspaceBoundaryError(ValueError):
+    """Raised when a resolved path escapes the workspace root."""
+
+
+def _enforce_workspace_boundary(path: Path, workspace_root: Path) -> None:
+    """Raise :class:`WorkspaceBoundaryError` if *path* is outside *workspace_root*.
+
+    Uses :meth:`Path.is_relative_to` which correctly handles symlinks
+    after :meth:`Path.resolve` has canonicalised the path.
+    """
+    if not path.is_relative_to(workspace_root):
+        raise WorkspaceBoundaryError(
+            f"Path '{path}' is outside the workspace root '{workspace_root}'."
+        )
+
+
+# ---------------------------------------------------------------------------
 # Shared path-resolution helper
 # ---------------------------------------------------------------------------
 
 
-def _resolve(path_raw: str, context: ExecutionContext | None) -> Path:
-    """Resolve *path_raw* to an absolute :class:`Path`.
+def _resolve(path_raw: str, context: ExecutionContext) -> Path:
+    """Resolve *path_raw* to an absolute :class:`Path` within *context.workspace_root*.
 
     Rules (in order):
     1. ``~`` expansion (``Path.expanduser()``).
     2. If absolute after expansion → used as-is.
     3. Otherwise resolved against ``context.workspace_root``.
-    4. Finally ``.resolve()`` to eliminate symlinks / ``..``.
+    4. ``.resolve()`` to eliminate symlinks / ``..``.
+    5. Boundary check — raises :class:`WorkspaceBoundaryError` if the
+       resolved path is outside ``context.workspace_root``.
     """
     path = Path(path_raw).expanduser()
-    if not path.is_absolute() and context is not None:
+    if not path.is_absolute():
         path = context.workspace_root / path
-    return path.resolve()
+    resolved = path.resolve()
+    _enforce_workspace_boundary(resolved, context.workspace_root)
+    return resolved
 
 
 # ---------------------------------------------------------------------------
@@ -79,7 +104,7 @@ class ReadFileTool(Tool):
         path_raw = kwargs.get("path")
         if not path_raw:
             raise ValueError("Missing required parameter 'path'")
-        context = kwargs.get("_context")
+        context = kwargs["_context"]
         path = _resolve(path_raw, context)
         if not path.exists():
             raise FileNotFoundError(f"File not found: {path}")
@@ -87,7 +112,7 @@ class ReadFileTool(Tool):
             raise IsADirectoryError(f"Path is a directory, not a file: {path}")
 
     async def execute(self, **kwargs: Any) -> ToolResult:
-        path = _resolve(kwargs["path"], kwargs.get("_context"))
+        path = _resolve(kwargs["path"], kwargs["_context"])
         try:
             content = path.read_text(encoding="utf-8")
             return ToolResult.ok(content)
@@ -160,7 +185,7 @@ class WriteFileTool(Tool):
         # content will be checked in execute — empty string is valid
 
     async def execute(self, **kwargs: Any) -> ToolResult:
-        path = _resolve(kwargs["path"], kwargs.get("_context"))
+        path = _resolve(kwargs["path"], kwargs["_context"])
         content = kwargs.get("content", "")
 
         try:

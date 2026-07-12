@@ -1,6 +1,6 @@
 """Immutable execution context provided to tools at invocation time.
 
-Carries runtime environment information (workspace root, future settings)
+Carries runtime environment information (workspace root, timeouts, limits)
 that tools may need without coupling them to global state or hard-coded paths.
 """
 
@@ -26,9 +26,17 @@ class ExecutionContext:
 
         This field is **required** — every invocation of a filesystem
         tool must know what directory it operates within.
+    shell_timeout_seconds:
+        Maximum wall-clock time (in seconds) that a shell command is
+        allowed to run before being forcibly terminated.  Defaults to 30.
+    grep_max_results:
+        Maximum number of matches returned by the grep tool before
+        results are truncated.  Defaults to 100.
     """
 
     workspace_root: Path
+    shell_timeout_seconds: int = 30
+    grep_max_results: int = 100
 
     def __post_init__(self) -> None:
         """Enforce that *workspace_root* is an absolute path."""
