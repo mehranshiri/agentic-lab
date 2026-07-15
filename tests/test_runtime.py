@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, Mock
 
@@ -12,9 +13,12 @@ from agent.result import AgentResult
 from agent.runtime import AgentRuntime
 from llm.conversation_representation import ConversationRepresentation
 from llm.provider_tool_call import ProviderToolCall
-from llm.representations.base import ToolSchemaAdapter
+from llm.representations.base import SystemPromptAdapter, ToolSchemaAdapter
 from llm.response import LLMResponse
+from prompts.assembler import SystemPromptAssembler
+from prompts.models import SystemPrompt
 from tools.catalog import ToolCatalog
+from tools.execution_context import ExecutionContext
 from tools.metadata import ToolMetadata
 from tools.registry import ToolRegistry
 
@@ -27,8 +31,15 @@ from tools.registry import ToolRegistry
 class FakeConversationRepresentation(ConversationRepresentation):
     """Stub that converts a Conversation into simple role/content dicts."""
 
-    def to_provider_messages(self, conversation: Any) -> list[dict[str, Any]]:
+    def to_provider_messages(
+        self,
+        conversation: Any,
+        *,
+        system_prompt: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
         result: list[dict[str, Any]] = []
+        if system_prompt is not None:
+            result.append(system_prompt)
         for msg in conversation.messages:
             item: dict[str, Any] = {
                 "role": msg.role.value,
@@ -66,6 +77,13 @@ class FakeToolSchemaAdapter(ToolSchemaAdapter):
         }
 
 
+class FakeSystemPromptAdapter(SystemPromptAdapter):
+    """Stub that returns a minimal system message dict."""
+
+    def to_provider_format(self, prompt: SystemPrompt) -> dict[str, Any]:
+        return {"role": "system", "content": prompt.text}
+
+
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -84,6 +102,24 @@ def empty_catalog() -> ToolCatalog:
 
 
 @pytest.fixture
+def context() -> ExecutionContext:
+    """Return a minimal ExecutionContext for testing."""
+    return ExecutionContext(workspace_root=Path("/tmp/test-workspace"))
+
+
+@pytest.fixture
+def prompt_assembler() -> SystemPromptAssembler:
+    """Return a SystemPromptAssembler instance."""
+    return SystemPromptAssembler()
+
+
+@pytest.fixture
+def prompt_adapter() -> FakeSystemPromptAdapter:
+    """Return a fake SystemPromptAdapter."""
+    return FakeSystemPromptAdapter()
+
+
+@pytest.fixture
 def mock_bridge() -> AsyncMock:
     """Return a mock ToolCallBridge."""
     bridge = AsyncMock()
@@ -96,6 +132,9 @@ def runtime(
     mock_provider: Mock,
     empty_catalog: ToolCatalog,
     mock_bridge: AsyncMock,
+    prompt_assembler: SystemPromptAssembler,
+    prompt_adapter: FakeSystemPromptAdapter,
+    context: ExecutionContext,
 ) -> AgentRuntime:
     """Return a fully wired AgentRuntime with mock dependencies."""
     return AgentRuntime(
@@ -104,6 +143,9 @@ def runtime(
         tool_schema_adapter=FakeToolSchemaAdapter(),
         tool_catalog=empty_catalog,
         tool_call_bridge=mock_bridge,
+        prompt_assembler=prompt_assembler,
+        prompt_adapter=prompt_adapter,
+        context=context,
     )
 
 
@@ -231,6 +273,9 @@ class TestAgentRuntime:
         mock_provider: Mock,
         empty_catalog: ToolCatalog,
         mock_bridge: AsyncMock,
+        prompt_assembler: SystemPromptAssembler,
+        prompt_adapter: FakeSystemPromptAdapter,
+        context: ExecutionContext,
     ) -> None:
         """When the agent loops beyond max_iterations, return failure."""
         runtime = AgentRuntime(
@@ -239,6 +284,9 @@ class TestAgentRuntime:
             tool_schema_adapter=FakeToolSchemaAdapter(),
             tool_catalog=empty_catalog,
             tool_call_bridge=mock_bridge,
+            prompt_assembler=prompt_assembler,
+            prompt_adapter=prompt_adapter,
+            context=context,
             max_iterations=2,
         )
 
@@ -322,15 +370,17 @@ class TestAgentRuntime:
 
         assert result.success is True
         # Verify the second call includes the full conversation
+        # [system, user, assistant, tool] — 4 messages with system prompt
         second_call_messages = mock_provider.send_message.call_args_list[1][1][
             "messages"
         ]
-        assert len(second_call_messages) == 3
-        assert second_call_messages[0]["role"] == "user"
-        assert second_call_messages[1]["role"] == "assistant"
-        assert second_call_messages[1]["tool_calls"] is not None
-        assert second_call_messages[2]["role"] == "tool"
-        assert second_call_messages[2]["tool_call_id"] == "call_1"
+        assert len(second_call_messages) == 4
+        assert second_call_messages[0]["role"] == "system"
+        assert second_call_messages[1]["role"] == "user"
+        assert second_call_messages[2]["role"] == "assistant"
+        assert second_call_messages[2]["tool_calls"] is not None
+        assert second_call_messages[3]["role"] == "tool"
+        assert second_call_messages[3]["tool_call_id"] == "call_1"
 
     @pytest.mark.asyncio
     async def test_tool_failure_appended_as_error(
@@ -380,8 +430,9 @@ class TestAgentRuntime:
         second_call_messages = mock_provider.send_message.call_args_list[1][1][
             "messages"
         ]
-        assert second_call_messages[2]["role"] == "tool"
-        assert "Error: tool crashed" in second_call_messages[2]["content"]
+        # [system, user, assistant, tool] — tool is at index 3
+        assert second_call_messages[3]["role"] == "tool"
+        assert "Error: tool crashed" in second_call_messages[3]["content"]
 
     @pytest.mark.asyncio
     async def test_llm_returns_none_text(
