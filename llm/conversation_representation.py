@@ -26,13 +26,22 @@ class ConversationRepresentation(ABC):
     """
 
     @abstractmethod
-    def to_provider_messages(self, conversation: Conversation) -> list[dict[str, Any]]:
+    def to_provider_messages(
+        self,
+        conversation: Conversation,
+        *,
+        system_prompt: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
         """Convert *conversation* into provider-compatible message dicts.
 
         Parameters
         ----------
         conversation:
             The provider-independent conversation to translate.
+        system_prompt:
+            An optional pre-formatted system prompt message dict (already
+            processed by a :class:`SystemPromptAdapter`).  When provided,
+            it is prepended as the first message in the output list.
 
         Returns
         -------
@@ -56,13 +65,21 @@ class DeepSeekConversationRepresentation(ConversationRepresentation):
       ``{"role": "tool", "content": "...", "tool_call_id": "..."}``
     """
 
-    def to_provider_messages(self, conversation: Conversation) -> list[dict[str, Any]]:
+    def to_provider_messages(
+        self,
+        conversation: Conversation,
+        *,
+        system_prompt: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
         """Convert *conversation* into DeepSeek-compatible message dicts.
 
         Parameters
         ----------
         conversation:
             The provider-independent conversation to translate.
+        system_prompt:
+            An optional pre-formatted system prompt message dict.  When
+            provided, it is prepended as the first message.
 
         Returns
         -------
@@ -70,6 +87,9 @@ class DeepSeekConversationRepresentation(ConversationRepresentation):
             A list of message dicts suitable for DeepSeek's API.
         """
         messages: list[dict[str, Any]] = []
+
+        if system_prompt is not None:
+            messages.append(system_prompt)
 
         for msg in conversation.messages:
             messages.append(self._convert_one(msg))

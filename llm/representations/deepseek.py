@@ -1,14 +1,16 @@
-"""DeepSeek-specific tool-schema adapter.
+"""DeepSeek-specific adapters for tool schemas and system prompts.
 
-Translates :class:`~tools.metadata.ToolMetadata` into the schema expected by
-the DeepSeek Chat Completions API (OpenAI-compatible function-calling format).
+Translates domain objects (:class:`~tools.metadata.ToolMetadata`,
+:class:`~prompts.models.SystemPrompt`) into the formats expected by the
+DeepSeek Chat Completions API (OpenAI-compatible).
 """
 
 from __future__ import annotations
 
 from typing import Any
 
-from llm.representations.base import ToolSchemaAdapter
+from llm.representations.base import SystemPromptAdapter, ToolSchemaAdapter
+from prompts.models import SystemPrompt
 from tools.metadata import ToolMetadata
 
 
@@ -54,3 +56,29 @@ class DeepSeekToolSchemaAdapter(ToolSchemaAdapter):
                 "parameters": metadata.parameters,
             },
         }
+
+
+class DeepSeekSystemPromptAdapter(SystemPromptAdapter):
+    """Translate :class:`SystemPrompt` into a DeepSeek-compatible message dict.
+
+    DeepSeek (like OpenAI) represents system prompts as the first message
+    in the messages list with ``role: "system"``::
+
+        {"role": "system", "content": "<assembled prompt text>"}
+
+    """
+
+    def to_provider_format(self, prompt: SystemPrompt) -> dict[str, Any]:
+        """Translate *prompt* into a DeepSeek ``system`` message dict.
+
+        Parameters
+        ----------
+        prompt:
+            The assembled, provider-independent system prompt.
+
+        Returns
+        -------
+        dict[str, Any]
+            ``{"role": "system", "content": "<text>"}``.
+        """
+        return {"role": "system", "content": prompt.text}

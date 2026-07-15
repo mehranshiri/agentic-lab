@@ -1,9 +1,14 @@
-"""Abstract base class for provider-specific tool-schema adapters.
+"""Abstract base classes for provider-specific adapters.
 
-Every concrete adapter must subclass :class:`ToolSchemaAdapter` and
-implement :meth:`to_provider_format`.  This keeps provider-specific
-schemas isolated inside the LLM module while the Tool Framework remains
-independent.
+Defines two strategy interfaces:
+
+* :class:`ToolSchemaAdapter` — translates :class:`~tools.metadata.ToolMetadata`
+  into provider-specific tool definitions.
+* :class:`SystemPromptAdapter` — translates :class:`~prompts.models.SystemPrompt`
+  into a provider-specific message dict.
+
+Both follow the Dependency Inversion Principle: the Tool and Prompt domains
+never know about concrete adapters.
 """
 
 from __future__ import annotations
@@ -11,6 +16,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any
 
+from prompts.models import SystemPrompt
 from tools.metadata import ToolMetadata
 
 
@@ -43,5 +49,45 @@ class ToolSchemaAdapter(ABC):
         dict[str, Any]
             A provider-ready tool definition dict (e.g. DeepSeek's
             ``{"type": "function", "function": {...}}`` schema).
+        """
+        ...
+
+
+class SystemPromptAdapter(ABC):
+    """Strategy interface for translating a SystemPrompt into a provider dict.
+
+    Responsibilities:
+    * Accept a provider-independent :class:`~prompts.models.SystemPrompt`.
+    * Translate it into a provider-specific message dict ready for
+      inclusion in the message list sent to the LLM.
+    * Remain stateless — all state is carried by the input prompt.
+
+    Different providers handle system prompts differently:
+
+    * OpenAI / DeepSeek — ``{"role": "system", "content": "..."}``
+      as the first message in the messages list.
+    * Anthropic — a separate ``system`` parameter, not in messages.
+    * Some providers — no system prompt support (adapter returns
+      ``None`` or raises).
+
+    This base class depends on the Prompts domain model
+    (:class:`~prompts.models.SystemPrompt`) but the Prompts domain
+    never knows about any concrete adapter.
+    """
+
+    @abstractmethod
+    def to_provider_format(self, prompt: SystemPrompt) -> dict[str, Any]:
+        """Translate *prompt* into a provider-specific message dict.
+
+        Parameters
+        ----------
+        prompt:
+            The assembled, provider-independent system prompt.
+
+        Returns
+        -------
+        dict[str, Any]
+            A provider-ready message dict (e.g.
+            ``{"role": "system", "content": "..."}``).
         """
         ...
