@@ -13,9 +13,11 @@ from core.config import PROJECT_ROOT, settings
 from llm import (
     DeepSeekConversationRepresentation,
     DeepSeekProvider,
+    DeepSeekSystemPromptAdapter,
     DeepSeekToolSchemaAdapter,
     ToolCallBridge,
 )
+from prompts import SystemPromptAssembler
 from tools import (
     ExecutionContext,
     GrepTool,
@@ -47,17 +49,24 @@ async def main() -> None:
     )
     conversation_representation = DeepSeekConversationRepresentation()
     tool_schema_adapter = DeepSeekToolSchemaAdapter()
+    prompt_adapter = DeepSeekSystemPromptAdapter()
 
-    # ── 3. Bridge (tool execution boundary) ─────────────────────────────
+    # ── 3. Prompt assembly ──────────────────────────────────────────────
+    prompt_assembler = SystemPromptAssembler()
+
+    # ── 4. Bridge (tool execution boundary) ─────────────────────────────
     tool_call_bridge = ToolCallBridge(invoker)
 
-    # ── 4. Runtime — the only public entry point ────────────────────────
+    # ── 5. Runtime — the only public entry point ────────────────────────
     runtime = AgentRuntime(
         provider=provider,
         conversation_representation=conversation_representation,
         tool_schema_adapter=tool_schema_adapter,
         tool_catalog=catalog,
         tool_call_bridge=tool_call_bridge,
+        prompt_assembler=prompt_assembler,
+        prompt_adapter=prompt_adapter,
+        context=context,
     )
 
     # ── 5. Execute ──────────────────────────────────────────────────────

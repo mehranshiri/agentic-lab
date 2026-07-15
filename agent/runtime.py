@@ -2,7 +2,8 @@
 
 The runtime is the only public entry point for executing an agent
 interaction.  It orchestrates conversation management, LLM communication,
-tool execution, and the reasoning loop behind a single :meth:`run` method.
+tool execution, system prompt assembly, and the reasoning loop behind
+a single :meth:`run` method.
 """
 
 from __future__ import annotations
@@ -14,9 +15,11 @@ from conversation.models import Conversation, ToolCall
 from llm.base import LlmProvider
 from llm.conversation_representation import ConversationRepresentation
 from llm.provider_tool_call import ProviderToolCall
-from llm.representations.base import ToolSchemaAdapter
+from llm.representations.base import SystemPromptAdapter, ToolSchemaAdapter
 from llm.tool_call_bridge import ToolCallBridge
+from prompts.assembler import SystemPromptAssembler
 from tools.catalog import ToolCatalog
+from tools.execution_context import ExecutionContext
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +28,7 @@ class AgentRuntime:
     """Execute one complete agent interaction.
 
     Responsibilities:
+    * Assemble the system prompt from context once per interaction.
     * Receive a user's prompt.
     * Create the initial Conversation.
     * Convert the Conversation into provider-specific messages.
@@ -47,6 +51,9 @@ class AgentRuntime:
         tool_schema_adapter: ToolSchemaAdapter,
         tool_catalog: ToolCatalog,
         tool_call_bridge: ToolCallBridge,
+        prompt_assembler: SystemPromptAssembler,
+        prompt_adapter: SystemPromptAdapter,
+        context: ExecutionContext,
         *,
         max_iterations: int = 10,
     ) -> None:
@@ -64,6 +71,14 @@ class AgentRuntime:
             Discovers available tools and their metadata.
         tool_call_bridge:
             Executes provider tool calls through the Tool Framework.
+        prompt_assembler:
+            Assembles the system prompt from context, tools, and
+            workspace information.
+        prompt_adapter:
+            Translates the assembled SystemPrompt into a provider-specific
+            message dict.
+        context:
+            Execution context describing the workspace environment.
         max_iterations:
             Maximum number of reasoning-loop iterations before raising
             an error.  Protects against infinite loops.  Defaults to 10.
@@ -73,6 +88,9 @@ class AgentRuntime:
         self._tool_schema_adapter = tool_schema_adapter
         self._tool_catalog = tool_catalog
         self._tool_call_bridge = tool_call_bridge
+        self._prompt_assembler = prompt_assembler
+        self._prompt_adapter = prompt_adapter
+        self._context = context
         self._max_iterations = max_iterations
 
     async def run(self, prompt: str) -> AgentResult:
@@ -92,48 +110,54 @@ class AgentRuntime:
         # ── 1. Create initial Conversation with the user prompt ─────────
         conversation = Conversation().add_user_message(prompt)
 
-        # ── 2. Discover available tools (once, before the loop) ─────────
+        # ── 2. Assemble and format the system prompt (once) ─────────────
+        system_prompt = self._prompt_assembler.assemble(
+            self._context, self._tool_catalog
+        )
+        system_msg = self._prompt_adapter.to_provider_format(system_prompt)
+
+        # ── 3. Discover available tools (once, before the loop) ─────────
         tool_metadata_list = self._tool_catalog.list_tools()
         provider_tools = [
             self._tool_schema_adapter.to_provider_format(meta)
             for meta in tool_metadata_list
         ]
 
-        # ── 3. Reasoning loop ───────────────────────────────────────────
+        # ── 4. Reasoning loop ───────────────────────────────────────────
         for iteration in range(1, self._max_iterations + 1):
             logger.debug("Reasoning iteration %d", iteration)
 
-            # 3a. Convert Conversation to provider messages
+            # 4a. Convert Conversation to provider messages (with system prompt)
             provider_messages = self._conversation_representation.to_provider_messages(
-                conversation
+                conversation, system_prompt=system_msg
             )
 
-            # 3b. Send to LLM
+            # 4b. Send to LLM
             response = await self._provider.send_message(
                 messages=provider_messages,
                 tools=provider_tools if provider_tools else None,
             )
 
-            # 3c. No tool calls → final answer
+            # 4c. No tool calls → final answer
             if not response.tool_calls:
                 return AgentResult(
                     success=True,
                     answer=response.text or "",
                 )
 
-            # 3d. Tool calls received — record assistant message
+            # 4d. Tool calls received — record assistant message
             domain_tool_calls = self._to_domain_tool_calls(response.tool_calls)
             conversation = conversation.add_assistant_message(
                 content=response.text or None,
                 tool_calls=domain_tool_calls,
             )
 
-            # 3e. Execute tools via ToolCallBridge
+            # 4e. Execute tools via ToolCallBridge
             tool_call_results = await self._tool_call_bridge.process(
                 response.tool_calls
             )
 
-            # 3f. Append tool results into the Conversation
+            # 4f. Append tool results into the Conversation
             for tcr in tool_call_results:
                 content = (
                     tcr.result.content
@@ -157,9 +181,9 @@ class AgentRuntime:
                     content=content,
                 )
 
-            # 3g. Continue loop with updated conversation
+            # 4g. Continue loop with updated conversation
 
-        # ── 4. Max iterations exceeded ──────────────────────────────────
+        # ── 5. Max iterations exceeded ──────────────────────────────────
         logger.warning(
             "AgentRuntime exceeded max_iterations (%d) without reaching "
             "a final answer. Returning failure result.",
