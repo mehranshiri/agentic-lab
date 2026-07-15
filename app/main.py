@@ -61,7 +61,7 @@ async def main() -> None:
     )
 
     # ── 5. Execute ──────────────────────────────────────────────────────
-    prompt = "Read the README.md file and choose a Title for this app we are building."
+    prompt = "Read the README.md file and choose a Title for this app we are building. Then, create a simple .txt file to write down your proposed title and description in order to test writing file tool"
     print(f"Prompt: {prompt}\n")
     print("Agent is working …\n")
 
