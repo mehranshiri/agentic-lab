@@ -19,6 +19,13 @@ This project follows **SOLID** principles and clean architecture:
 - **Simplicity over cleverness**: Prefer the simplest abstraction that solves the immediate need. Don't add extensibility points until they have a second consumer.
 - **Domain-first**: Prefer discovering missing domain concepts over introducing technical layers. New abstractions should emerge because they represent real responsibilities in the domain, not because they make the architecture appear more flexible.
 
+## Development Process
+
+- **Sprint-first**: Any new feature, domain concept, or architectural change must be planned in a sprint document (`docs/sprintN.md`) **before** writing code. The sprint document defines the goal, motivation, responsibilities, and constraints. Without a sprint plan there is no implementation.
+- **Sprint format**: Follow the structure established in sprints 8–10: `# Sprint N — Title`, `## Goal`, `# Why this sprint exists`, `# Responsibilities` (one subsection per component), `# Constraints`. Include code sketches for new public APIs.
+- **ADR accompanies sprint**: Every sprint that changes module boundaries, introduces a new pattern, or adds a dependency must produce a corresponding ADR in `docs/adr/`. Reference the ADR in commit messages.
+- **Sprint triggers**: Write a sprint document when you are introducing a new domain concept (new package, new abstraction), a new integration point between existing packages, or a new capability (new tool, new provider). Bug fixes, refactors within a single module, and test additions do not require a sprint.
+
 ## Conventions
 
 - **Never duplicate code**: If logic appears in two places, extract it to a shared location. Check `core/`, `llm/base.py`, and `tools/base.py` before adding helper functions.

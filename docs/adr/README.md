@@ -17,6 +17,7 @@ decided, **why**, and what **trade-offs** were considered.
 | [007](007-sprint7-tool-call-bridge.md) | 7 — Tool Call Bridge | `ProviderToolCall` value object, `ToolCallBridge` translation boundary, `ToolCallResult` pairing |
 | [008](008-sprint8-conversation-agent-runtime.md) | 8 — Conversation & Agent Runtime | `Conversation` immutable domain, `ConversationRepresentation` strategy, `AgentRuntime` reasoning loop, `AgentResult` |
 | [009](009-sprint9-tool-expansion-workspace-safety.md) | 9 — Tool Expansion & Workspace Safety | `ShellTool`, `GrepTool`, workspace boundary enforcement, mandatory `ExecutionContext` in `_resolve`, symlink escape protection |
+| [010](010-sprint10-system-prompts.md) | 10 — System Prompts | `prompts/` domain package, `SystemPrompt` + `InstructionBlock` value objects, `SystemPromptAssembler`, `SystemPromptAdapter` strategy, runtime integration |
 
 ## Format
 
