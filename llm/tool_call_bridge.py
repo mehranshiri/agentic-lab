@@ -18,16 +18,29 @@ from tools.result import ToolResult
 
 @dataclass(frozen=True)
 class ToolCallResult:
-    """Pair an invocation with the result it produced.
+    """Pair a provider tool call with the result it produced.
 
     Attributes
     ----------
+    tool_call_id:
+        The provider-assigned identifier of the tool call that produced
+        this result.  Carried through so that consumers (e.g. the runtime)
+        can correlate results back to specific calls without re-matching
+        by name.
     invocation:
         The :class:`ToolInvocation` that was executed.
     result:
         The :class:`~tools.result.ToolResult` produced by the invocation.
     """
 
+    # DESIGN: tool_call_id is a provider-derived identifier that lives in the
+    # LLM module alongside ToolCallResult.  It does NOT leak into tools/ —
+    # ToolInvocation and ToolResult remain provider-agnostic.  The bridge is
+    # the last component to see both the provider call ID and the tool
+    # execution together; carrying the ID through avoids fragile reverse
+    # lookups by every consumer of process().
+
+    tool_call_id: str
     invocation: ToolInvocation
     result: ToolResult
 
@@ -79,6 +92,12 @@ class ToolCallBridge:
                 arguments=tc.arguments,
             )
             tool_result = await self._invoker.invoke(invocation)
-            results.append(ToolCallResult(invocation=invocation, result=tool_result))
+            results.append(
+                ToolCallResult(
+                    tool_call_id=tc.id,
+                    invocation=invocation,
+                    result=tool_result,
+                )
+            )
 
         return results

@@ -164,20 +164,8 @@ class AgentRuntime:
                     if tcr.result.success
                     else f"Error: {tcr.result.error or 'Unknown error'}"
                 )
-                # Use the provider tool call id that matches this result
-                provider_tc = next(
-                    (
-                        tc
-                        for tc in response.tool_calls
-                        if tc.name == tcr.invocation.tool_name
-                    ),
-                    None,
-                )
-                tool_call_id = (
-                    provider_tc.id if provider_tc else tcr.invocation.tool_name
-                )
                 conversation = conversation.add_tool_message(
-                    tool_call_id=tool_call_id,
+                    tool_call_id=tcr.tool_call_id,
                     content=content,
                 )
 

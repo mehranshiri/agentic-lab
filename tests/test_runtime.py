@@ -252,6 +252,7 @@ class TestAgentRuntime:
 
         mock_bridge.process.return_value = [
             ToolCallResult(
+                tool_call_id="call_1",
                 invocation=ToolInvocation(
                     tool_name="read_file",
                     arguments={"path": "README.md"},
@@ -312,6 +313,7 @@ class TestAgentRuntime:
 
         mock_bridge.process.return_value = [
             ToolCallResult(
+                tool_call_id="call_x",
                 invocation=ToolInvocation(
                     tool_name="read_file", arguments={"path": "x"}
                 ),
@@ -361,6 +363,7 @@ class TestAgentRuntime:
 
         mock_bridge.process.return_value = [
             ToolCallResult(
+                tool_call_id="call_1",
                 invocation=ToolInvocation(tool_name="echo", arguments={}),
                 result=ToolResult.ok("echo output"),
             )
@@ -419,6 +422,7 @@ class TestAgentRuntime:
 
         mock_bridge.process.return_value = [
             ToolCallResult(
+                tool_call_id="call_1",
                 invocation=ToolInvocation(tool_name="bad_tool", arguments={}),
                 result=ToolResult.fail("tool crashed"),
             )

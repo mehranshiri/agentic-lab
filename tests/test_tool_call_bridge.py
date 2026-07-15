@@ -72,7 +72,7 @@ class TestToolCallResult:
         """``ToolCallResult`` must be immutable."""
         inv = ToolInvocation(tool_name="echo", arguments={})
         res = ToolResult.ok("ok")
-        tcr = ToolCallResult(invocation=inv, result=res)
+        tcr = ToolCallResult(tool_call_id="call_1", invocation=inv, result=res)
         with pytest.raises(Exception):
             tcr.result = ToolResult.fail("nope")  # type: ignore[misc]
 
@@ -80,15 +80,19 @@ class TestToolCallResult:
         """Two results with identical fields must be equal."""
         inv = ToolInvocation(tool_name="echo", arguments={})
         ok = ToolResult.ok("ok")
-        a = ToolCallResult(invocation=inv, result=ok)
-        b = ToolCallResult(invocation=inv, result=ok)
+        a = ToolCallResult(tool_call_id="call_1", invocation=inv, result=ok)
+        b = ToolCallResult(tool_call_id="call_1", invocation=inv, result=ok)
         assert a == b
 
     def test_different_results_not_equal(self) -> None:
         """Results with different tool outcomes must not be equal."""
         inv = ToolInvocation(tool_name="echo", arguments={})
-        a = ToolCallResult(invocation=inv, result=ToolResult.ok("ok"))
-        b = ToolCallResult(invocation=inv, result=ToolResult.fail("fail"))
+        a = ToolCallResult(
+            tool_call_id="call_1", invocation=inv, result=ToolResult.ok("ok")
+        )
+        b = ToolCallResult(
+            tool_call_id="call_1", invocation=inv, result=ToolResult.fail("fail")
+        )
         assert a != b
 
 
